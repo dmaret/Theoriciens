@@ -1,9 +1,9 @@
-<!DOCTYPE html>
+ <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PraxisPro Épistémé</title>
+    <title>PraxisPro Épistémé - Analyse Croisée</title>
     
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
@@ -18,153 +18,110 @@
         const { useState } = React;
 
         const App = () => {
-          const [activeTab, setActiveTab] = useState('generateur');
+          const [activeTab, setActiveTab] = useState('synthese');
           const [symptomesCoches, setSymptomesCoches] = useState([]);
 
           const symptomesList = [
             { id: 'S1', label: 'Mutisme ou retrait lors des entretiens' },
             { id: 'S2', label: 'Échecs répétés à la dernière étape de recrutement' },
-            { id: 'S3', label: 'Refus catégorique de se former' },
+            { id: 'S3', label: 'Refus catégorique de se former / Résistance' },
             { id: 'S4', label: 'Sabotage des démarches (retards, oublis)' },
             { id: 'S5', label: 'Sur-adaptation (dit "oui" à tout mais ne fait rien)' }
           ];
 
-          const genererHypotheses = () => {
-            if (symptomesCoches.length === 0) return null;
+          const handleCheck = (id) => {
+            if (symptomesCoches.includes(id)) {
+              setSymptomesCoches(symptomesCoches.filter(s => s !== id));
+            } else {
+              setSymptomesCoches([...symptomesCoches, id]);
+            }
+          };
+
+          const RenderFicheSynthese = () => {
+            if (symptomesCoches.length === 0) {
+              return (
+                <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center animate-fade-in">
+                  <h3 className="text-xl font-bold text-gray-400 mb-2">Aucune donnée à analyser</h3>
+                  <p className="text-gray-500">Veuillez sélectionner un ou plusieurs comportements ci-dessus pour générer la fiche de lecture croisée.</p>
+                </div>
+              );
+            }
 
             return (
-              <div className="space-y-6 mt-6">
-                <div className="bg-purple-50 border-l-4 border-purple-500 p-5 rounded-r-xl">
-                  <h4 className="font-bold text-purple-900 flex items-center gap-2 mb-2">
-                    🧠 Hypothèse Systémique (Palo Alto, Minuchin)
-                  </h4>
-                  <p className="text-sm text-purple-800 mb-2">
-                    <strong>Tentative de solution & Homéostasie :</strong> Le comportement ne doit pas être vu comme un déficit, mais comme une solution dysfonctionnelle. Selon <em>Watzlawick et Weakland</em>, l'injonction à "trouver un emploi à tout prix" peut constituer une double contrainte si le système familial (<em>Minuchin</em>) dépend de la présence du bénéficiaire.
-                  </p>
-                  <div className="bg-white p-3 rounded shadow-sm text-sm">
-                    <strong>Piste d'action (Haley) :</strong> Prescrire le symptôme ("Pour la semaine prochaine, je vous demande de ne faire aucune démarche") pour casser la redondance interactionnelle.
-                  </div>
+              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mt-6">
+                <div className="bg-slate-800 text-white p-6 border-b-4 border-blue-500">
+                  <h2 className="text-2xl font-bold flex items-center gap-2">
+                    📋 Fiche de Lecture Clinique Croisée
+                  </h2>
+                  <p className="text-slate-300 text-sm mt-2">Synthèse pluridisciplinaire générée à partir des comportements observés.</p>
                 </div>
 
-                <div className="bg-blue-50 border-l-4 border-blue-500 p-5 rounded-r-xl">
-                  <h4 className="font-bold text-blue-900 flex items-center gap-2 mb-2">
-                    🎯 Hypothèse Identitaire (Piaget, Dubar, Carré)
-                  </h4>
-                  <p className="text-sm text-blue-800 mb-2">
-                    <strong>Apprenance & Crise biographique :</strong> Selon <em>Piaget</em>, le bénéficiaire peine à "accommoder" ses schémas au marché du travail. <em>Claude Dubar</em> indiquerait une rupture entre l'identité pour soi et l'identité pour autrui. Le manque d'apprenance (<em>Philippe Carré</em>) s'explique par cette menace identitaire.
-                  </p>
-                  <div className="bg-white p-3 rounded shadow-sm text-sm">
-                    <strong>Piste d'action (Meirieu / Paul) :</strong> Postulat d'éducabilité. Adopter une posture asymétrique mais non directive (<em>Maela Paul</em>) pour reconstruire le sens.
-                  </div>
-                </div>
+                <div className="p-6 space-y-8">
+                  {/* Axe 1 : Méta-Hypothèse Combinée */}
+                  <section>
+                    <h3 className="text-lg font-bold text-gray-800 border-b-2 border-gray-100 pb-2 mb-4 flex items-center gap-2">
+                      🧩 1. Clé de lecture intégrative (Le Sens du Symptôme)
+                    </h3>
+                    <div className="bg-indigo-50 p-5 rounded-lg border border-indigo-100 text-sm text-indigo-900 space-y-3">
+                      <p>
+                        <strong>L'intersection des blocages :</strong> Les comportements observés ne sont pas de simples "manques de motivation", mais le point de friction entre deux dimensions. 
+                      </p>
+                      <p>
+                        D'un point de vue <strong>constructiviste et sociologique</strong>, il y a un défaut d'accommodation (<em>Jean Piaget</em>) au marché de l'emploi actuel, générant une crise de la transaction biographique (<em>Claude Dubar</em>). Le bénéficiaire n'a pas réuni les conditions de l'apprenance (<em>Philippe Carré</em>) pour se projeter dans une nouvelle identité.
+                      </p>
+                      <p>
+                        D'un point de vue <strong>systémique</strong>, cette crise identitaire est "résolue" par une tentative de solution dysfonctionnelle (<em>Paul Watzlawick, John Weakland</em>). Le comportement (ex: sabotage, refus) agit comme un régulateur pour maintenir l'homéostasie du système familial ou personnel (<em>Salvador Minuchin, Virginia Satir</em>), évitant ainsi la confrontation à l'échec ou au changement d'attentes de l'entourage.
+                      </p>
+                    </div>
+                  </section>
 
-                <div className="bg-gray-800 text-gray-100 border-l-4 border-gray-400 p-5 rounded-r-xl">
-                  <h4 className="font-bold text-white flex items-center gap-2 mb-2">
-                    🛡️ Cadrage Légal (LACI - Admin.ch)
-                  </h4>
-                  <p className="text-sm mb-2">
-                    <strong>Art. 15 et 17 LACI :</strong> La traçabilité de ces hypothèses cliniques dans le dossier permet d'attester que le défaut de démarche fait l'objet d'un travail de fond, évitant une sanction immédiate pour inaptitude au placement.
-                  </p>
+                  {/* Axe 2 : Pistes et Questionnements */}
+                  <section>
+                    <h3 className="text-lg font-bold text-gray-800 border-b-2 border-gray-100 pb-2 mb-4 flex items-center gap-2">
+                      🧭 2. Pistes d'intervention et Questionnements (Palo Alto & Posture)
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      
+                      {/* Piste Stratégique */}
+                      <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm hover:border-orange-300 transition">
+                        <h4 className="font-bold text-orange-700 mb-2 text-sm uppercase tracking-wider">Axe Stratégique (Haley / Fry)</h4>
+                        <p className="text-sm text-gray-700 mb-3"><strong>Objectif :</strong> Casser l'escalade symétrique et la résistance.</p>
+                        <ul className="text-sm text-gray-600 space-y-2 list-disc pl-4">
+                          <li><strong>Prescription :</strong> Demander l'inverse de ce qui est attendu. "Au vu de la complexité de votre situation, je vous demande de ne faire absolument aucune postulation d'ici notre prochain rendez-vous."</li>
+                          <li><strong>Question circulaire :</strong> "Si vous réussissiez brutalement à changer, qui dans votre entourage serait le plus déstabilisé ?"</li>
+                        </ul>
+                      </div>
+
+                      {/* Piste Posturale */}
+                      <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm hover:border-blue-300 transition">
+                        <h4 className="font-bold text-blue-700 mb-2 text-sm uppercase tracking-wider">Axe Postural (M. Paul / J. Libois)</h4>
+                        <p className="text-sm text-gray-700 mb-3"><strong>Objectif :</strong> Réintégrer le sujet et sortir de l'injonction.</p>
+                        <ul className="text-sm text-gray-600 space-y-2 list-disc pl-4">
+                          <li><strong>Cheminer avec :</strong> Suspendre temporairement l'exigence de résultat (CV, lettres) pour travailler sur le sens. "Qu'est-ce qui a de la valeur pour vous aujourd'hui ?"</li>
+                          <li><strong>Clinique du sensible :</strong> Accueillir la peur ou la colère non pas comme un obstacle à l'emploi, mais comme le matériel principal de l'entretien.</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </section>
+
+                  {/* Axe 3 : Sécurisation Légale */}
+                  <section>
+                    <h3 className="text-lg font-bold text-gray-800 border-b-2 border-gray-100 pb-2 mb-4 flex items-center gap-2">
+                      ⚖️ 3. Sécurisation du parcours (Cadre LACI)
+                    </h3>
+                    <div className="bg-gray-800 p-4 rounded-lg text-sm text-gray-300">
+                      <p className="mb-2"><strong>Art. 15 (Aptitude au placement) & Art. 17 LACI :</strong></p>
+                      <p>
+                        En documentant cette analyse croisée dans le dossier, l'intervenant démontre que l'absence de résultats n'est pas assimilable à de la mauvaise volonté sanctionnable (inaptitude), mais relève d'un processus clinique en cours de traitement. L'application du <strong>postulat d'éducabilité (<em>Philippe Meirieu</em>)</strong> justifie le maintien des mesures en adaptant la proportionnalité des exigences légales à la réalité psychique et systémique du bénéficiaire.
+                      </p>
+                      <p className="mt-3 text-xs text-gray-400 italic">Sources croisées : admin.ch / arodes.hes-so.ch / shs.cairn.info</p>
+                    </div>
+                  </section>
+
                 </div>
               </div>
             );
           };
-
-          const RenderGenerateur = () => (
-            <div className="space-y-6">
-              <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                  💡 Générateur d'Hypothèses Cliniques
-                </h2>
-                <p className="text-gray-600 mb-4 text-sm">
-                  Sélectionnez les comportements observés pour générer une grille de lecture (Systémie, Constructivisme, Droit).
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
-                  {symptomesList.map(sym => (
-                    <label key={sym.id} className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition">
-                      <input 
-                        type="checkbox" 
-                        className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                        checked={symptomesCoches.includes(sym.id)}
-                        onChange={(e) => {
-                          if (e.target.checked) {
-                            setSymptomesCoches([...symptomesCoches, sym.id]);
-                          } else {
-                            setSymptomesCoches(symptomesCoches.filter(id => id !== sym.id));
-                          }
-                        }}
-                      />
-                      <span className="text-sm font-medium text-gray-700">{sym.label}</span>
-                    </label>
-                  ))}
-                </div>
-                {genererHypotheses()}
-              </div>
-            </div>
-          );
-
-          const RenderQuestionnementCirculaire = () => (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                👥 Boussole de Questionnement Circulaire
-              </h2>
-              <p className="text-gray-600 mb-6 text-sm">
-                Selon G. Bateson et V. Satir, ces questions décentrent le problème de l'individu vers ses interactions.
-              </p>
-
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="font-bold text-gray-800 border-b pb-2">Différences de perception</h3>
-                  <div className="bg-green-50 p-4 rounded-lg text-sm border border-green-100">
-                    <ul className="space-y-3">
-                      <li className="flex gap-2">💬 "Selon vous, qui dans votre entourage est le plus inquiet de votre situation ?"</li>
-                      <li className="flex gap-2">💬 "Si je demandais à votre conjoint ce qui vous bloque, que me dirait-il ?"</li>
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="font-bold text-gray-800 border-b pb-2">Homéostasie du système</h3>
-                  <div className="bg-orange-50 p-4 rounded-lg text-sm border border-orange-100">
-                    <ul className="space-y-3">
-                      <li className="flex gap-2">💬 "Qu'est-ce qui serait le plus grave : rester dans cette situation, ou réussir et que les attentes changent ?"</li>
-                      <li className="flex gap-2">💬 "Si demain vous trouvez le poste idéal, qui dans votre famille devra le plus réorganiser sa vie ?"</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-
-          const RenderEvaluateurPosture = () => (
-            <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-              <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                🧭 Évaluateur de Posture Professionnelle
-              </h2>
-              <p className="text-gray-600 mb-6 text-sm">
-                Inspiré de J. Libois (le sensible) et M. Paul (cheminer avec).
-              </p>
-
-              <div className="space-y-4">
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h4 className="font-bold text-gray-800">1. Qui définit la finalité du rendez-vous ?</h4>
-                  <select className="w-full mt-2 p-2 border rounded text-sm bg-gray-50">
-                    <option>Moi, en fonction des exigences légales (Risque de résistance)</option>
-                    <option>Co-construction : le cadre est posé, le chemin lui appartient</option>
-                  </select>
-                </div>
-
-                <div className="p-4 border border-gray-200 rounded-lg">
-                  <h4 className="font-bold text-gray-800">2. Quelle place est laissée au "Sensible" ?</h4>
-                  <select className="w-full mt-2 p-2 border rounded text-sm bg-gray-50">
-                    <option>J'occulte les émotions pour rester rationnel sur l'emploi.</option>
-                    <option>J'accueille l'émotion comme une donnée légitime de la transaction biographique (Dubar).</option>
-                  </select>
-                </div>
-              </div>
-            </div>
-          );
 
           return (
             <div className="min-h-screen">
@@ -172,33 +129,44 @@
                 <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
                   <div>
                     <h1 className="text-2xl font-black tracking-tight">Praxis<span className="text-blue-400">Pro</span> Épistémé</h1>
-                    <p className="text-xs text-gray-300 font-medium mt-1">Ingénierie de l'accompagnement socioprofessionnel</p>
+                    <p className="text-xs text-gray-300 font-medium mt-1">Outil d'Ingénierie Clinique et Socioprofessionnelle</p>
                   </div>
                   <div className="flex gap-2 hidden md:flex">
                     <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-900 text-green-300 border border-green-700 rounded-full text-xs font-bold">
-                      🛡️ Sources certifiées (HES-SO / Admin.ch)
+                      🛡️ 100% Sources certifiées (HES-SO / Cairn.info / Admin.ch)
                     </span>
                   </div>
                 </div>
               </header>
 
               <main className="max-w-7xl mx-auto px-4 py-8">
-                <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-200 pb-2">
+                
+                {/* Zone de sélection des comportements (Toujours visible) */}
+                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
+                   <h2 className="text-lg font-bold mb-4 text-gray-800">1. Observation des comportements cibles</h2>
+                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {symptomesList.map(sym => (
+                      <label key={sym.id} className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition ${symptomesCoches.includes(sym.id) ? 'bg-blue-50 border-blue-400' : 'hover:bg-gray-50'}`}>
+                        <input 
+                          type="checkbox" 
+                          className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                          checked={symptomesCoches.includes(sym.id)}
+                          onChange={() => handleCheck(sym.id)}
+                        />
+                        <span className="text-sm font-medium text-gray-700">{sym.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200 pb-2">
                   <button
-                    onClick={() => setActiveTab('generateur')}
+                    onClick={() => setActiveTab('synthese')}
                     className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                      activeTab === 'generateur' ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-600 hover:bg-gray-50'
+                      activeTab === 'synthese' ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    💡 Hypothèses
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('questionnement')}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                      activeTab === 'questionnement' ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    👥 Palo Alto
+                    📋 Fiche de Lecture Croisée
                   </button>
                   <button
                     onClick={() => setActiveTab('posture')}
@@ -206,14 +174,42 @@
                       activeTab === 'posture' ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-600 hover:bg-gray-50'
                     }`}
                   >
-                    🧭 Posture
+                    🧭 Auto-Supervision de Posture
                   </button>
                 </div>
 
                 <div className="transition-all duration-300">
-                  {activeTab === 'generateur' && <RenderGenerateur />}
-                  {activeTab === 'questionnement' && <RenderQuestionnementCirculaire />}
-                  {activeTab === 'posture' && <RenderEvaluateurPosture />}
+                  {activeTab === 'synthese' && <RenderFicheSynthese />}
+                  {/* L'onglet posture reste inchangé mais je l'inclus pour garder l'application complète */}
+                  {activeTab === 'posture' && (
+                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
+                      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+                        🧭 Auto-Supervision de la Posture Professionnelle
+                      </h2>
+                      <p className="text-gray-600 mb-6 text-sm">
+                        Outil d'analyse réflexive pour conscientiser les biais d'intervention.
+                      </p>
+                      <div className="space-y-6">
+                        <div className="p-5 border border-gray-200 rounded-lg bg-white shadow-sm">
+                          <h4 className="font-bold text-gray-800 text-lg mb-1">L'Asymétrie et le Rapport au Savoir</h4>
+                          <p className="text-xs text-blue-600 font-bold mb-3 uppercase tracking-wider">Théoricienne : Maela Paul ("Cheminer avec")</p>
+                          <select className="w-full p-3 border border-gray-300 rounded text-sm bg-gray-50 focus:ring-blue-500">
+                            <option>Devant : Je définis les objectifs, je "tire" le bénéficiaire (Expert).</option>
+                            <option>Derrière : Je le laisse totalement faire (Laisser-faire).</option>
+                            <option selected>À côté : J'assume le cadre légal, mais je suis dans une docte ignorance sur SA solution.</option>
+                          </select>
+                        </div>
+                        <div className="p-5 border border-gray-200 rounded-lg bg-white shadow-sm">
+                          <h4 className="font-bold text-gray-800 text-lg mb-1">La Clinique du Sensible</h4>
+                          <p className="text-xs text-blue-600 font-bold mb-3 uppercase tracking-wider">Théoricienne : Joëlle Libois</p>
+                          <select className="w-full p-3 border border-gray-300 rounded text-sm bg-gray-50 focus:ring-blue-500">
+                            <option>Rationalisation : Je recentre immédiatement sur l'administratif.</option>
+                            <option selected>Accueil : L'émotion est traitée comme une information clinique sur sa situation.</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </main>
             </div>
