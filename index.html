@@ -1,217 +1,665 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PraxisPro Épistémé - Analyse Croisée</title>
-    
+    <title>PraxisPro Épistémé - Ingénierie Clinique Avancée</title>
+
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 </head>
-<body class="bg-gray-100 text-gray-800 font-sans">
-    
+<body class="bg-gray-50 text-gray-800 font-sans">
+
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState } = React;
+        const { useState, useEffect } = React;
 
+        // ============ BASE DE DONNÉES ENRICHIE ============
+        const SYMPTOMS_DATABASE = [
+          // COMPORTEMENTS D'ÉVITEMENT
+          { id: 'S1', label: 'Mutisme ou retrait lors des entretiens', category: 'Évitement', severity: 'medium' },
+          { id: 'S2', label: 'Absence répétée aux rendez-vous', category: 'Évitement', severity: 'high' },
+          { id: 'S3', label: 'Refus de parler de ses projets', category: 'Évitement', severity: 'medium' },
+          { id: 'S4', label: 'Attitude passive, monologue laconique', category: 'Évitement', severity: 'low' },
+
+          // RÉSISTANCE ACTIVE
+          { id: 'S5', label: 'Refus catégorique de se former / Résistance ouverte', category: 'Résistance', severity: 'high' },
+          { id: 'S6', label: 'Critique systématique des propositions', category: 'Résistance', severity: 'medium' },
+          { id: 'S7', label: 'Défi ou provocation envers l\'autorité', category: 'Résistance', severity: 'high' },
+          { id: 'S8', label: 'Demandes incohérentes ou contradictoires', category: 'Résistance', severity: 'medium' },
+
+          // SABOTAGE ET AUTO-SABOTAGE
+          { id: 'S9', label: 'Sabotage des démarches (retards, oublis)', category: 'Sabotage', severity: 'high' },
+          { id: 'S10', label: 'Absence lors d\'entretiens cruciaux', category: 'Sabotage', severity: 'high' },
+          { id: 'S11', label: 'Comportements auto-destructeurs en situation', category: 'Sabotage', severity: 'high' },
+          { id: 'S12', label: 'Échecs répétés à la dernière étape (dernière marche)', category: 'Sabotage', severity: 'high' },
+
+          // ADAPTATION PARADOXALE
+          { id: 'S13', label: 'Sur-adaptation (dit "oui" mais ne fait rien)', category: 'Paradoxe', severity: 'medium' },
+          { id: 'S14', label: 'Promesses jamais tenues, engagements vides', category: 'Paradoxe', severity: 'medium' },
+          { id: 'S15', label: 'Suridentification au rôle puis effondrement', category: 'Paradoxe', severity: 'medium' },
+
+          // SYMPTÔMES ÉMOTIONNELS
+          { id: 'S16', label: 'Crises émotionnelles ou pleurs sans avertissement', category: 'Émotionnel', severity: 'high' },
+          { id: 'S17', label: 'Colère qui monte rapidement et disproportionnée', category: 'Émotionnel', severity: 'high' },
+          { id: 'S18', label: 'Apathie, absence visible de motivation', category: 'Émotionnel', severity: 'medium' },
+          { id: 'S19', label: 'Anxiété manifeste avant situations nouvelles', category: 'Émotionnel', severity: 'medium' },
+        ];
+
+        // ============ HYPOTHÈSES THÉORIQUES DYNAMIQUES ============
+        const THEORETICAL_FRAMEWORK = {
+          'systemic': {
+            name: 'Approche Systémique',
+            theorists: ['Watzlawick', 'Minuchin', 'Satir', 'Weakland'],
+            keywords: ['homéostasie', 'feedback', 'double-bind', 'jeu relatif'],
+            description: 'Le comportement maintient l\'équilibre du système (famille, institution) et régule les relations.'
+          },
+          'constructivist': {
+            name: 'Constructivisme & Socialisation',
+            theorists: ['Piaget', 'Dubar', 'Carré', 'Mezirow'],
+            keywords: ['accommodation', 'assimilation', 'crise identitaire', 'apprenance'],
+            description: 'Le sujet ne peut se projeter car les schèmes existants ne permettent pas d\'intégrer le changement demandé.'
+          },
+          'psychodynamic': {
+            name: 'Approche Psychodynamique',
+            theorists: ['Freud', 'Winnicott', 'Balint', 'Reich'],
+            keywords: ['transfert', 'résistance', 'pulsions', 'espace transitionnel'],
+            description: 'Des enjeux inconscients (culpabilité, peur du succès, fidélité familiale) mobilisent la défense.'
+          },
+          'sociological': {
+            name: 'Perspective Sociologique',
+            theorists: ['Bourdieu', 'Goffman', 'Lahire', 'Dubet'],
+            keywords: ['capital culturel', 'stigmate', 'rôles', 'habitus'],
+            description: 'Les structures sociales et le capital culturel rendent certains mondes inaccessibles ou menaçants.'
+          },
+          'cognitive': {
+            name: 'Approche Cognitive-Comportementale',
+            theorists: ['Beck', 'Bandura', 'Ellis', 'Meichenbaum'],
+            keywords: ['cognitions', 'schémas', 'renforcement', 'auto-efficacité'],
+            description: 'Les croyances négatives et les boucles cognitives bloquent l\'action adaptée.'
+          }
+        };
+
+        // ============ HYPOTHÈSES PAR COMBINAISON DE SYMPTÔMES ============
+        const generateHypotheses = (selectedSymptoms) => {
+          const symptomIds = new Set(selectedSymptoms);
+          const hypotheses = [];
+
+          // Logique de détection de profils
+          const hasEvasion = symptomIds.has('S1') || symptomIds.has('S3') || symptomIds.has('S4');
+          const hasActiveResistance = symptomIds.has('S5') || symptomIds.has('S6') || symptomIds.has('S7');
+          const hasSabotage = symptomIds.has('S9') || symptomIds.has('S10') || symptomIds.has('S11') || symptomIds.has('S12');
+          const hasParadox = symptomIds.has('S13') || symptomIds.has('S14') || symptomIds.has('S15');
+          const hasEmotional = symptomIds.has('S16') || symptomIds.has('S17') || symptomIds.has('S18') || symptomIds.has('S19');
+          const hasAbsence = symptomIds.has('S2') || symptomIds.has('S10');
+
+          // PROFIL 1: Pure éviction
+          if (hasEvasion && !hasActiveResistance && !hasSabotage) {
+            hypotheses.push({
+              profile: '🔇 Profil d\'Éviction Passive',
+              mainAxe: 'Constructiviste / Psychodynamique',
+              hypothesis: 'Le sujet ne peut pas se dire "non", mais la parole ne vient pas. Cela suggère soit une crise d\'accommodation profonde (n\'a pas les outils cognitifs pour penser sa trajectoire), soit une inhibition défensive (peur de la déception ou du jugement).',
+              mechanisms: [
+                '→ Défense par le silence (protection du self)',
+                '→ Absence de schèmes pour construire une identité professionnelle',
+                '→ Peur du jugement ou de l\'inadéquation'
+              ],
+              interventions: [
+                'Réduire la charge symbolique des entretiens (déplacer la conversation)',
+                'Travailler sur l\'étayage verbal ("et si on parlait de...")',
+                'Accueillir l\'incertitude plutôt que de la combler'
+              ]
+            });
+          }
+
+          // PROFIL 2: Résistance frontale
+          if (hasActiveResistance && !hasSabotage) {
+            hypotheses.push({
+              profile: '⚡ Profil de Résistance Frontale',
+              mainAxe: 'Systémique / Psychodynamique',
+              hypothesis: 'Le "non" est dit clairement. Cela peut être une lutte pour l\'autonomie (jeu symétrique avec l\'intervenant) ou une loyauté familiale (refus de "devenir quelqu\'un d\'autre").',
+              mechanisms: [
+                '→ Escalade symétrique (plus vous demandez, plus il refuse)',
+                '→ Loyauté implicite envers un système qui profite de son immobilité',
+                '→ Préservation d\'une identité acquise (danger du changement)'
+              ],
+              interventions: [
+                'Prescrire l\'inverse (demander de NE PAS faire)',
+                'Introduire une tierce personne (diluer la dyade)',
+                'Valoriser ce qu\'il dit "non", comprendre la sagesse du refus'
+              ]
+            });
+          }
+
+          // PROFIL 3: Sabotage systématique
+          if (hasSabotage) {
+            hypotheses.push({
+              profile: '💣 Profil de Sabotage Systématique',
+              mainAxe: 'Systémique / Psychodynamique',
+              hypothesis: 'Les démarches avancent jusqu\'au dernier moment, puis échouent. Ceci évoque un conflit inconscient très spécifique : "je veux réussir, mais il se passe quelque chose qui m\'arrête au seuil".',
+              mechanisms: [
+                '→ Solution dysfonctionnelle qui rend à l\'ordre ancien',
+                '→ Peur du succès (responsabilités, attentes, changement de statut)',
+                '→ Loyauté envers un système où il a une place définie',
+                '→ Culpabilité si quelqu\'un d\'autre est "resté en arrière"'
+              ],
+              interventions: [
+                'Questionner circulaire : "Qui serait le plus dérangé si vous réussissiez ?"',
+                'Identifier le bénéfice secondaire du sabotage',
+                'Ralentir intentionnellement pour désamorcer l\'urgence'
+              ]
+            });
+          }
+
+          // PROFIL 4: Paradoxe adaptatif
+          if (hasParadox) {
+            hypotheses.push({
+              profile: '🎭 Profil d\'Adaptation Paradoxale',
+              mainAxe: 'Systémique / Sociologique',
+              hypothesis: 'Le sujet dit "oui" à tout mais son corps dit "non". C\'est une stratégie de survie dans un contexte où dire non coûte trop cher (sanction, exclusion, honte).',
+              mechanisms: [
+                '→ Double-bind : "Sois autonome" + "Ne me quitte pas / Ne change pas"',
+                '→ Incapacité à dire non explicitementeut générer une sanction majeure',
+                '→ Le "non" s\'exprime par l\'inaction (résistance passive)'
+              ],
+              interventions: [
+                'Autoriser explicitement à dire "je ne sais pas", "c\'est trop"',
+                'Différencier : ce qu\'il VEUT vs. ce qu\'on lui DEMANDE',
+                'Créer des espace où il peut dire non sans conséquences'
+              ]
+            });
+          }
+
+          // PROFIL 5: Charge émotionnelle manifeste
+          if (hasEmotional && !hasSabotage) {
+            hypotheses.push({
+              profile: '🌊 Profil d\'Émotionnalité Débordante',
+              mainAxe: 'Psychodynamique / Cognitive',
+              hypothesis: 'Les émotions sont massives et peu régulées. Cela peut refléter un trauma, une anxiété extrême, ou une incapacité à maintenir un espace mentalisé face à la pression.',
+              mechanisms: [
+                '→ Capacité de mentalisation réduite',
+                '→ Activation du système amygdalien (réactions primitives)',
+                '→ Absence de narratif personnel stabilisé'
+              ],
+              interventions: [
+                'Arrêter le programme temporairement (crise de la capacité)',
+                'Psychoéducation sur l\'émotion (normalisatio, respect)',
+                'Développer des outils de régulation (respiration, corps, créativité)'
+              ]
+            });
+          }
+
+          // PROFIL 6: Absence totale
+          if (hasAbsence && selectedSymptoms.length <= 2) {
+            hypotheses.push({
+              profile: '👻 Profil de Désinvestissement Radical',
+              mainAxe: 'Sociologique / Psychodynamique',
+              hypothesis: 'L\'absence physique parle d\'une désinvestissement complet du processus. Cela peut être un message : "Je n\'ai rien à faire ici, vous avez de fausses attentes sur moi".',
+              mechanisms: [
+                '→ Le corps refuse d\'entrer dans la scène sociale',
+                '→ Rupture de confiance (expériences antérieures d\'exclusion)',
+                '→ Perte du sens du processus ("à quoi bon ?")'
+              ],
+              interventions: [
+                'Vérifier l\'accès logistique (transport, horaires)',
+                'Renégocier le contrat sans pénalité immédiate',
+                'Identifier ce qui a du sens pour lui AILLEURS'
+              ]
+            });
+          }
+
+          return hypotheses;
+        };
+
+        // ============ QUESTIONS CLINIQUES PAR PROFIL ============
+        const CLINICAL_QUESTIONS = {
+          evasion: [
+            'Depuis quand cette retenue est-elle apparue ? Y a-t-il un événement déclencheur ?',
+            'Dans d\'autres contextes (famille, amis, loisirs), parle-t-il normalement ?',
+            'A-t-il peur spécifiquement de vous ou de la situation "accompagnement" en général ?',
+            'Y a-t-il quelque chose qu\'il POURRAIT dire qui changerait les choses ?'
+          ],
+          resistance: [
+            'Son "non" est-il une réaction à YOUR posture ou une conviction profonde ?',
+            'Qui dans son entourage encouragerait ce refus ? Qui le soutiendrait s\'il acceptait ?',
+            'Ce refus lui donne-t-il une forme de pouvoir ou de contrôle ?',
+            'Qu\'adviendrait-il s\'il acceptait ? Quel prix imagine-t-il ?'
+          ],
+          sabotage: [
+            'À quel point PRÉCIS échoue-t-il ? (entretien final, signature, premier jour...)',
+            'Que fait-il (consciemment ou non) pour que ça échoue à ce moment-là ?',
+            'Qui est soulagé quand ça échoue ? Qui serait dérangé s\'il réussissait ?',
+            'Y a-t-il un "gain secondaire" à rester dans la situation actuelle ?'
+          ],
+          paradox: [
+            'Quand il dit "oui", voit-on une hésitation ou un soulagement ?',
+            'Que se passerait-il réellement s\'il disait "non" ?',
+            'Son entourage lui reproche-t-il de "dire oui pour rien faire" ?',
+            'Peut-on distinguer ce qu\'IL veut de ce qu\'on lui impose ?'
+          ],
+          emotional: [
+            'Ces émotions sont-elles nouvelles ou de longue date ?',
+            'Peut-il les nommer ? Y a-t-il un événement associé ?',
+            'Comment son entourage réagit-il quand il s\'effondre ? (protection, rejet, culpabilité ?)',
+            'Existe-t-il un moment ou un contexte où il est CALME et présent ?'
+          ],
+          absence: [
+            'Y a-t-il des obstacles logistiques (transports, horaires) ?',
+            'A-t-il d\'autres engagements en même temps que vous le proposez ?',
+            'Est-ce que l\'absence est une forme de communication ? ("Je ne suis pas d\'accord")',
+            'Que perdrait-il (statut, revenus, relations) s\'il s\'investissait vraiment ?'
+          ]
+        };
+
+        // ============ STRATÉGIES D\'INTERVENTION CONCRÈTES ============
+        const INTERVENTION_STRATEGIES = {
+          paloAlto: {
+            name: '🎯 École de Palo Alto (Watzlawick, Fry, Haley)',
+            tactics: [
+              '→ PRESCRIPTION DE L\'INVERSE : "Je vous demande de NE PAS postule durant 2 semaines"',
+              '→ REDÉFINITION : "Votre absence, c\'est une manière très efficace de nous dire quelque chose"',
+              '→ QUITTER LE JEU : Arrêter de demander, déplacer l\'enjeu ailleurs',
+              '→ ESCALADE MINEURE : Faire délibérément un tout petit pas dysfonctionnel pour voir sa réaction',
+              '→ MÉTACOMMUNICATION : "Je remarque que chaque fois que..., vous répondez par..."'
+            ],
+            when: 'Situation où plus on demande, plus on obtient le contraire'
+          },
+          postural: {
+            name: '🤝 Approche Posturale (M. Paul, J. Libois)',
+            tactics: [
+              '→ CHEMINER AVEC : Suspendre l\'exigence de résultat, marcher côte-à-côte',
+              '→ ACCUEIL DU SENSIBLE : L\'émotion n\'est pas un obstacle mais le MATÉRIEL clinique',
+              '→ DOCTE IGNORANCE : "Je ne sais pas la solution pour toi, mais explorons ensemble"',
+              '→ CONFIANCE EN L\'ÉDUCABILITÉ : Même situation bloquée peut se dénicher par du LIEN',
+              '→ ASYMÉTRIE CONSCIENTE : Je porte le cadre légal, tu trouves le sens'
+            ],
+            when: 'Situation où la personne s\'est retirée de la relation ou se sent jugée'
+          },
+          systemic: {
+            name: '♻️ Intervention Systémique (Minuchin, Satir)',
+            tactics: [
+              '→ QUESTIONS CIRCULAIRES : "Si tu changeais, qui dans ta famille serait le plus mal ?"',
+              '→ RECOMPOSITION DE LA FAMILLE : Inviter les proches pour observer les jeux relationnels',
+              '→ SCULPTING : Faire matérialiser les positions relationnelles',
+              '→ EXCEPTION-FINDING : "Y a-t-il une seule fois où c\'était différent ?"',
+              '→ NORMALISATION DES JEUX : Nommer explicitement ce qui se joue'
+            ],
+            when: 'Situation où le système familial renforce le comportement problématique'
+          },
+          cognitive: {
+            name: '💭 Restructuration Cognitive (Beck, Ellis)',
+            tactics: [
+              '→ DÉBUSQUER LES CROYANCES : "Qu\'est-ce que tu penses VRAIMENT de toi dans une entrevue ?"',
+              '→ TEST DE RÉALITÉ : Vérifier la validité de ces croyances par l\'expérience',
+              '→ EXPOSITION PROGRESSIVE : Petits pas vers la situation redoutée',
+              '→ AUTO-COMPASSION : Transformer l\'autocritique en curiosité bienveillante',
+              '→ NARRATION ALTERNATIVE : Construire une histoire de soi plus capable'
+            ],
+            when: 'Situation où les cognitions négatives paralysent l\'action'
+          }
+        };
+
+        // ============ COMPOSANT PRINCIPAL ============
         const App = () => {
-          const [activeTab, setActiveTab] = useState('synthese');
-          const [symptomesCoches, setSymptomesCoches] = useState([]);
+          const [selectedSymptoms, setSelectedSymptoms] = useState([]);
+          const [activeTab, setActiveTab] = useState('observation');
+          const [analysisHistory, setAnalysisHistory] = useState(() => {
+            const saved = localStorage.getItem('praxisHistory');
+            return saved ? JSON.parse(saved) : [];
+          });
+          const [showAdvancedMode, setShowAdvancedMode] = useState(false);
+          const [clinicalNotes, setClinicalNotes] = useState('');
 
-          const symptomesList = [
-            { id: 'S1', label: 'Mutisme ou retrait lors des entretiens' },
-            { id: 'S2', label: 'Échecs répétés à la dernière étape de recrutement' },
-            { id: 'S3', label: 'Refus catégorique de se former / Résistance' },
-            { id: 'S4', label: 'Sabotage des démarches (retards, oublis)' },
-            { id: 'S5', label: 'Sur-adaptation (dit "oui" à tout mais ne fait rien)' }
-          ];
+          // Sauvegarder l\'historique
+          useEffect(() => {
+            localStorage.setItem('praxisHistory', JSON.stringify(analysisHistory));
+          }, [analysisHistory]);
 
-          const handleCheck = (id) => {
-            if (symptomesCoches.includes(id)) {
-              setSymptomesCoches(symptomesCoches.filter(s => s !== id));
-            } else {
-              setSymptomesCoches([...symptomesCoches, id]);
+          const handleSymptomToggle = (id) => {
+            setSelectedSymptoms(prev =>
+              prev.includes(id) ? prev.filter(s => s !== id) : [...prev, id]
+            );
+          };
+
+          const saveAnalysis = () => {
+            if (selectedSymptoms.length === 0) {
+              alert('Sélectionnez au moins un symptôme');
+              return;
+            }
+            const analysis = {
+              id: Date.now(),
+              timestamp: new Date().toLocaleString('fr-FR'),
+              symptoms: selectedSymptoms,
+              notes: clinicalNotes,
+              hypotheses: generateHypotheses(selectedSymptoms)
+            };
+            setAnalysisHistory([analysis, ...analysisHistory]);
+            setClinicalNotes('');
+            alert('Analyse sauvegardée dans l\'historique');
+          };
+
+          const clearHistory = () => {
+            if (window.confirm('Supprimer tout l\'historique ?')) {
+              setAnalysisHistory([]);
+              localStorage.removeItem('praxisHistory');
             }
           };
 
-          const RenderFicheSynthese = () => {
-            if (symptomesCoches.length === 0) {
+          const exportToText = () => {
+            if (selectedSymptoms.length === 0) return;
+
+            const hypotheses = generateHypotheses(selectedSymptoms);
+            const selectedSymptomLabels = SYMPTOMS_DATABASE
+              .filter(s => selectedSymptoms.includes(s.id))
+              .map(s => `- ${s.label}`);
+
+            let text = `=== PRAXISPRO ÉPISTÉMÉ - RAPPORT D'ANALYSE ===\n`;
+            text += `Date: ${new Date().toLocaleString('fr-FR')}\n`;
+            text += `Nombre d'observations: ${selectedSymptoms.length}\n\n`;
+
+            text += `SYMPTÔMES OBSERVÉS:\n${selectedSymptomLabels.join('\n')}\n\n`;
+
+            text += `HYPOTHÈSES GÉNÉRÉES:\n`;
+            hypotheses.forEach(h => {
+              text += `\n${h.profile}\n`;
+              text += `Axe théorique: ${h.mainAxe}\n`;
+              text += `${h.hypothesis}\n`;
+              text += `Mécanismes:\n${h.mechanisms.join('\n')}\n`;
+            });
+
+            text += `\nNOTES CLINIQUES:\n${clinicalNotes || '(aucune)'}\n`;
+
+            const blob = new Blob([text], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `praxis-analyse-${Date.now()}.txt`;
+            a.click();
+          };
+
+          const renderObservationPanel = () => (
+            <div className="space-y-6">
+              <div className="bg-white p-6 rounded-xl shadow border border-gray-200">
+                <div className="flex justify-between items-center mb-4">
+                  <h2 className="text-lg font-bold">📍 Observations Comportementales</h2>
+                  <button
+                    onClick={() => setShowAdvancedMode(!showAdvancedMode)}
+                    className="text-xs px-3 py-1 bg-purple-100 text-purple-700 rounded-full hover:bg-purple-200"
+                  >
+                    {showAdvancedMode ? '⚙️ Mode Normal' : '🔬 Mode Avancé'}
+                  </button>
+                </div>
+
+                {/* Groupes de symptômes */}
+                {['Évitement', 'Résistance', 'Sabotage', 'Paradoxe', 'Émotionnel'].map(category => (
+                  <div key={category} className="mb-6">
+                    <h3 className="font-semibold text-gray-700 mb-3 text-sm uppercase tracking-wider">{category}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {SYMPTOMS_DATABASE
+                        .filter(s => s.category === category)
+                        .map(symptom => (
+                          <label
+                            key={symptom.id}
+                            className={`flex items-start gap-3 p-3 border-2 rounded-lg cursor-pointer transition ${
+                              selectedSymptoms.includes(symptom.id)
+                                ? 'bg-blue-50 border-blue-400 shadow-md'
+                                : 'bg-white border-gray-200 hover:border-gray-300'
+                            }`}
+                          >
+                            <input
+                              type="checkbox"
+                              className="w-5 h-5 mt-0.5 text-blue-600 rounded"
+                              checked={selectedSymptoms.includes(symptom.id)}
+                              onChange={() => handleSymptomToggle(symptom.id)}
+                            />
+                            <div className="flex-1 text-sm">
+                              <p className="font-medium text-gray-800">{symptom.label}</p>
+                              {showAdvancedMode && (
+                                <p className="text-xs text-gray-500 mt-1">Sévérité: {symptom.severity}</p>
+                              )}
+                            </div>
+                          </label>
+                        ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Notes cliniques */}
+              <div className="bg-white p-6 rounded-xl shadow border border-gray-200">
+                <h3 className="font-semibold mb-3">📝 Notes Cliniques</h3>
+                <textarea
+                  value={clinicalNotes}
+                  onChange={(e) => setClinicalNotes(e.target.value)}
+                  placeholder="Contexte personnel, observations additionnelles, hypothèses du professionnel..."
+                  className="w-full h-24 p-3 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 flex-wrap">
+                <button
+                  onClick={saveAnalysis}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-sm"
+                >
+                  💾 Sauvegarder l'Analyse
+                </button>
+                <button
+                  onClick={exportToText}
+                  className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 font-semibold text-sm"
+                >
+                  📄 Exporter en Texte
+                </button>
+                <button
+                  onClick={() => setSelectedSymptoms([])}
+                  className="px-4 py-2 bg-gray-300 text-gray-800 rounded-lg hover:bg-gray-400 font-semibold text-sm"
+                >
+                  🔄 Réinitialiser
+                </button>
+              </div>
+            </div>
+          );
+
+          const renderAnalysisPanel = () => {
+            if (selectedSymptoms.length === 0) {
               return (
-                <div className="bg-white p-8 rounded-xl shadow-sm border border-gray-200 text-center animate-fade-in">
-                  <h3 className="text-xl font-bold text-gray-400 mb-2">Aucune donnée à analyser</h3>
-                  <p className="text-gray-500">Veuillez sélectionner un ou plusieurs comportements ci-dessus pour générer la fiche de lecture croisée.</p>
+                <div className="bg-white p-8 rounded-xl shadow border border-gray-200 text-center">
+                  <p className="text-gray-500">Sélectionnez des symptômes pour générer l'analyse</p>
                 </div>
               );
             }
 
+            const hypotheses = generateHypotheses(selectedSymptoms);
+            const selectedSymptomLabels = SYMPTOMS_DATABASE.filter(s => selectedSymptoms.includes(s.id));
+
             return (
-              <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden mt-6">
-                <div className="bg-slate-800 text-white p-6 border-b-4 border-blue-500">
-                  <h2 className="text-2xl font-bold flex items-center gap-2">
-                    📋 Fiche de Lecture Clinique Croisée
-                  </h2>
-                  <p className="text-slate-300 text-sm mt-2">Synthèse pluridisciplinaire générée à partir des comportements observés.</p>
+              <div className="space-y-6">
+                {/* Synthèse des observations */}
+                <div className="bg-blue-50 border border-blue-200 p-6 rounded-xl">
+                  <h3 className="font-bold text-blue-900 mb-3">📊 Synthèse des Observations</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-xs text-blue-700 uppercase font-bold">Nombre d'observations</p>
+                      <p className="text-2xl font-bold text-blue-900">{selectedSymptoms.length}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-blue-700 uppercase font-bold">Catégories impliquées</p>
+                      <p className="text-sm text-blue-900">{new Set(selectedSymptomLabels.map(s => s.category)).size} domaines</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-blue-700 uppercase font-bold">Sévérité maximale</p>
+                      <p className="text-sm text-blue-900">{Math.max(...selectedSymptomLabels.map(s => ({ low: 1, medium: 2, high: 3 }[s.severity]))) === 3 ? '🔴 Haute' : '🟡 Modérée'}</p>
+                    </div>
+                  </div>
                 </div>
 
-                <div className="p-6 space-y-8">
-                  {/* Axe 1 : Méta-Hypothèse Combinée */}
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-800 border-b-2 border-gray-100 pb-2 mb-4 flex items-center gap-2">
-                      🧩 1. Clé de lecture intégrative (Le Sens du Symptôme)
-                    </h3>
-                    <div className="bg-indigo-50 p-5 rounded-lg border border-indigo-100 text-sm text-indigo-900 space-y-3">
-                      <p>
-                        <strong>L'intersection des blocages :</strong> Les comportements observés ne sont pas de simples "manques de motivation", mais le point de friction entre deux dimensions. 
-                      </p>
-                      <p>
-                        D'un point de vue <strong>constructiviste et sociologique</strong>, il y a un défaut d'accommodation (<em>Jean Piaget</em>) au marché de l'emploi actuel, générant une crise de la transaction biographique (<em>Claude Dubar</em>). Le bénéficiaire n'a pas réuni les conditions de l'apprenance (<em>Philippe Carré</em>) pour se projeter dans une nouvelle identité.
-                      </p>
-                      <p>
-                        D'un point de vue <strong>systémique</strong>, cette crise identitaire est "résolue" par une tentative de solution dysfonctionnelle (<em>Paul Watzlawick, John Weakland</em>). Le comportement (ex: sabotage, refus) agit comme un régulateur pour maintenir l'homéostasie du système familial ou personnel (<em>Salvador Minuchin, Virginia Satir</em>), évitant ainsi la confrontation à l'échec ou au changement d'attentes de l'entourage.
-                      </p>
+                {/* Hypothèses */}
+                {hypotheses.map((hyp, idx) => (
+                  <div key={idx} className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow hover:shadow-lg transition">
+                    <div className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white p-4">
+                      <h3 className="text-lg font-bold">{hyp.profile}</h3>
+                      <p className="text-sm text-indigo-100">Axe dominant: {hyp.mainAxe}</p>
                     </div>
-                  </section>
-
-                  {/* Axe 2 : Pistes et Questionnements */}
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-800 border-b-2 border-gray-100 pb-2 mb-4 flex items-center gap-2">
-                      🧭 2. Pistes d'intervention et Questionnements (Palo Alto & Posture)
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      
-                      {/* Piste Stratégique */}
-                      <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm hover:border-orange-300 transition">
-                        <h4 className="font-bold text-orange-700 mb-2 text-sm uppercase tracking-wider">Axe Stratégique (Haley / Fry)</h4>
-                        <p className="text-sm text-gray-700 mb-3"><strong>Objectif :</strong> Casser l'escalade symétrique et la résistance.</p>
-                        <ul className="text-sm text-gray-600 space-y-2 list-disc pl-4">
-                          <li><strong>Prescription :</strong> Demander l'inverse de ce qui est attendu. "Au vu de la complexité de votre situation, je vous demande de ne faire absolument aucune postulation d'ici notre prochain rendez-vous."</li>
-                          <li><strong>Question circulaire :</strong> "Si vous réussissiez brutalement à changer, qui dans votre entourage serait le plus déstabilisé ?"</li>
-                        </ul>
+                    <div className="p-6 space-y-4">
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">🔍 Hypothèse clinique</p>
+                        <p className="text-sm text-gray-700 bg-gray-50 p-3 rounded">{hyp.hypothesis}</p>
                       </div>
-
-                      {/* Piste Posturale */}
-                      <div className="bg-white border border-gray-200 p-4 rounded-lg shadow-sm hover:border-blue-300 transition">
-                        <h4 className="font-bold text-blue-700 mb-2 text-sm uppercase tracking-wider">Axe Postural (M. Paul / J. Libois)</h4>
-                        <p className="text-sm text-gray-700 mb-3"><strong>Objectif :</strong> Réintégrer le sujet et sortir de l'injonction.</p>
-                        <ul className="text-sm text-gray-600 space-y-2 list-disc pl-4">
-                          <li><strong>Cheminer avec :</strong> Suspendre temporairement l'exigence de résultat (CV, lettres) pour travailler sur le sens. "Qu'est-ce qui a de la valeur pour vous aujourd'hui ?"</li>
-                          <li><strong>Clinique du sensible :</strong> Accueillir la peur ou la colère non pas comme un obstacle à l'emploi, mais comme le matériel principal de l'entretien.</li>
-                        </ul>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">⚙️ Mécanismes identifiés</p>
+                        <div className="space-y-1">
+                          {hyp.mechanisms.map((m, i) => (
+                            <p key={i} className="text-sm text-gray-600">{m}</p>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <p className="text-sm font-semibold text-gray-700 mb-2">💡 Pistes d'intervention</p>
+                        <div className="space-y-1">
+                          {hyp.interventions.map((int, i) => (
+                            <p key={i} className="text-sm text-gray-600">{int}</p>
+                          ))}
+                        </div>
                       </div>
                     </div>
-                  </section>
+                  </div>
+                ))}
 
-                  {/* Axe 3 : Sécurisation Légale */}
-                  <section>
-                    <h3 className="text-lg font-bold text-gray-800 border-b-2 border-gray-100 pb-2 mb-4 flex items-center gap-2">
-                      ⚖️ 3. Sécurisation du parcours (Cadre LACI)
-                    </h3>
-                    <div className="bg-gray-800 p-4 rounded-lg text-sm text-gray-300">
-                      <p className="mb-2"><strong>Art. 15 (Aptitude au placement) & Art. 17 LACI :</strong></p>
-                      <p>
-                        En documentant cette analyse croisée dans le dossier, l'intervenant démontre que l'absence de résultats n'est pas assimilable à de la mauvaise volonté sanctionnable (inaptitude), mais relève d'un processus clinique en cours de traitement. L'application du <strong>postulat d'éducabilité (<em>Philippe Meirieu</em>)</strong> justifie le maintien des mesures en adaptant la proportionnalité des exigences légales à la réalité psychique et systémique du bénéficiaire.
-                      </p>
-                      <p className="mt-3 text-xs text-gray-400 italic">Sources croisées : admin.ch / arodes.hes-so.ch / shs.cairn.info</p>
-                    </div>
-                  </section>
-
+                {/* Questions cliniques contextualisées */}
+                <div className="bg-yellow-50 border border-yellow-200 p-6 rounded-xl">
+                  <h3 className="font-bold text-yellow-900 mb-4">❓ Questions à Explorer</h3>
+                  <div className="space-y-2">
+                    {selectedSymptoms.includes('S1') || selectedSymptoms.includes('S3') ? (
+                      CLINICAL_QUESTIONS.evasion.map((q, i) => (
+                        <p key={i} className="text-sm text-yellow-900">• {q}</p>
+                      ))
+                    ) : null}
+                    {selectedSymptoms.some(s => ['S5', 'S6', 'S7'].includes(s)) ? (
+                      CLINICAL_QUESTIONS.resistance.map((q, i) => (
+                        <p key={i} className="text-sm text-yellow-900">• {q}</p>
+                      ))
+                    ) : null}
+                    {selectedSymptoms.some(s => ['S9', 'S10', 'S11', 'S12'].includes(s)) ? (
+                      CLINICAL_QUESTIONS.sabotage.map((q, i) => (
+                        <p key={i} className="text-sm text-yellow-900">• {q}</p>
+                      ))
+                    ) : null}
+                  </div>
                 </div>
               </div>
             );
           };
 
-          return (
-            <div className="min-h-screen">
-              <header className="bg-slate-900 text-white border-b border-gray-800 shadow-lg sticky top-0 z-10">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-                  <div>
-                    <h1 className="text-2xl font-black tracking-tight">Praxis<span className="text-blue-400">Pro</span> Épistémé</h1>
-                    <p className="text-xs text-gray-300 font-medium mt-1">Outil d'Ingénierie Clinique et Socioprofessionnelle</p>
+          const renderInterventionPanel = () => (
+            <div className="space-y-6">
+              {Object.entries(INTERVENTION_STRATEGIES).map(([key, strategy]) => (
+                <div key={key} className="bg-white border-2 border-gray-200 rounded-xl overflow-hidden shadow">
+                  <div className="bg-gray-800 text-white p-4">
+                    <h3 className="text-lg font-bold">{strategy.name}</h3>
+                    <p className="text-xs text-gray-300 mt-1">{strategy.when}</p>
                   </div>
-                  <div className="flex gap-2 hidden md:flex">
-                    <span className="inline-flex items-center gap-1 px-3 py-1 bg-green-900 text-green-300 border border-green-700 rounded-full text-xs font-bold">
-                      🛡️ 100% Sources certifiées (HES-SO / Cairn.info / Admin.ch)
-                    </span>
+                  <div className="p-6">
+                    <div className="space-y-2">
+                      {strategy.tactics.map((tactic, i) => (
+                        <p key={i} className="text-sm text-gray-700 bg-gray-50 p-2 rounded border-l-4 border-gray-400">
+                          {tactic}
+                        </p>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          );
+
+          const renderHistoryPanel = () => (
+            <div className="space-y-4">
+              {analysisHistory.length === 0 ? (
+                <div className="bg-white p-8 rounded-xl shadow border border-gray-200 text-center">
+                  <p className="text-gray-500">Aucune analyse sauvegardée</p>
+                </div>
+              ) : (
+                <>
+                  <button
+                    onClick={clearHistory}
+                    className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 text-sm font-semibold"
+                  >
+                    🗑️ Effacer l'historique
+                  </button>
+                  {analysisHistory.map(analysis => (
+                    <div key={analysis.id} className="bg-white p-6 rounded-xl shadow border border-gray-200">
+                      <div className="flex justify-between items-start mb-4">
+                        <div>
+                          <p className="text-sm font-semibold text-gray-600">{analysis.timestamp}</p>
+                          <p className="text-xs text-gray-500">{analysis.symptoms.length} symptômes</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        {analysis.hypotheses.map((h, i) => (
+                          <p key={i} className="text-sm text-gray-700 font-medium">{h.profile}</p>
+                        ))}
+                      </div>
+                      {analysis.notes && (
+                        <p className="text-xs text-gray-600 mt-3 italic">Notes: {analysis.notes.substring(0, 100)}...</p>
+                      )}
+                    </div>
+                  ))}
+                </>
+              )}
+            </div>
+          );
+
+          return (
+            <div className="min-h-screen bg-gray-50">
+              <header className="bg-gradient-to-r from-slate-900 via-blue-900 to-slate-900 text-white border-b border-gray-800 shadow-xl sticky top-0 z-20">
+                <div className="max-w-7xl mx-auto px-4 py-5">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h1 className="text-3xl font-black tracking-tight">Praxis<span className="text-blue-300">Pro</span> Épistémé</h1>
+                      <p className="text-xs text-gray-300 font-medium mt-1">🧬 Ingénierie Clinique Avancée • Analyse Multithéorique</p>
+                    </div>
+                    <div className="text-xs text-gray-300 text-right">
+                      <p>v2.0 — Multi-profil</p>
+                      <p className="text-blue-300">{selectedSymptoms.length} observation(s)</p>
+                    </div>
                   </div>
                 </div>
               </header>
 
               <main className="max-w-7xl mx-auto px-4 py-8">
-                
-                {/* Zone de sélection des comportements (Toujours visible) */}
-                <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200 mb-8">
-                   <h2 className="text-lg font-bold mb-4 text-gray-800">1. Observation des comportements cibles</h2>
-                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {symptomesList.map(sym => (
-                      <label key={sym.id} className={`flex items-center gap-3 p-3 border rounded-lg cursor-pointer transition ${symptomesCoches.includes(sym.id) ? 'bg-blue-50 border-blue-400' : 'hover:bg-gray-50'}`}>
-                        <input 
-                          type="checkbox" 
-                          className="w-5 h-5 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
-                          checked={symptomesCoches.includes(sym.id)}
-                          onChange={() => handleCheck(sym.id)}
-                        />
-                        <span className="text-sm font-medium text-gray-700">{sym.label}</span>
-                      </label>
-                    ))}
-                  </div>
+                <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-300 pb-4">
+                  {['observation', 'analysis', 'interventions', 'history'].map(tab => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-4 py-2 rounded-lg font-semibold text-sm transition ${
+                        activeTab === tab
+                          ? 'bg-blue-600 text-white shadow-md'
+                          : 'bg-white text-gray-600 border border-gray-300 hover:bg-gray-50'
+                      }`}
+                    >
+                      {tab === 'observation' && '📍 Observations'}
+                      {tab === 'analysis' && '🔬 Analyse'}
+                      {tab === 'interventions' && '💡 Stratégies'}
+                      {tab === 'history' && '📚 Historique'}
+                    </button>
+                  ))}
                 </div>
 
-                <div className="flex flex-wrap gap-2 mb-6 border-b border-gray-200 pb-2">
-                  <button
-                    onClick={() => setActiveTab('synthese')}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                      activeTab === 'synthese' ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    📋 Fiche de Lecture Croisée
-                  </button>
-                  <button
-                    onClick={() => setActiveTab('posture')}
-                    className={`px-4 py-2 rounded-lg font-semibold text-sm transition-colors ${
-                      activeTab === 'posture' ? 'bg-blue-600 text-white shadow' : 'bg-white text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    🧭 Auto-Supervision de Posture
-                  </button>
-                </div>
-
-                <div className="transition-all duration-300">
-                  {activeTab === 'synthese' && <RenderFicheSynthese />}
-                  {/* L'onglet posture reste inchangé mais je l'inclus pour garder l'application complète */}
-                  {activeTab === 'posture' && (
-                    <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-200">
-                      <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
-                        🧭 Auto-Supervision de la Posture Professionnelle
-                      </h2>
-                      <p className="text-gray-600 mb-6 text-sm">
-                        Outil d'analyse réflexive pour conscientiser les biais d'intervention.
-                      </p>
-                      <div className="space-y-6">
-                        <div className="p-5 border border-gray-200 rounded-lg bg-white shadow-sm">
-                          <h4 className="font-bold text-gray-800 text-lg mb-1">L'Asymétrie et le Rapport au Savoir</h4>
-                          <p className="text-xs text-blue-600 font-bold mb-3 uppercase tracking-wider">Théoricienne : Maela Paul ("Cheminer avec")</p>
-                          <select className="w-full p-3 border border-gray-300 rounded text-sm bg-gray-50 focus:ring-blue-500">
-                            <option>Devant : Je définis les objectifs, je "tire" le bénéficiaire (Expert).</option>
-                            <option>Derrière : Je le laisse totalement faire (Laisser-faire).</option>
-                            <option selected>À côté : J'assume le cadre légal, mais je suis dans une docte ignorance sur SA solution.</option>
-                          </select>
-                        </div>
-                        <div className="p-5 border border-gray-200 rounded-lg bg-white shadow-sm">
-                          <h4 className="font-bold text-gray-800 text-lg mb-1">La Clinique du Sensible</h4>
-                          <p className="text-xs text-blue-600 font-bold mb-3 uppercase tracking-wider">Théoricienne : Joëlle Libois</p>
-                          <select className="w-full p-3 border border-gray-300 rounded text-sm bg-gray-50 focus:ring-blue-500">
-                            <option>Rationalisation : Je recentre immédiatement sur l'administratif.</option>
-                            <option selected>Accueil : L'émotion est traitée comme une information clinique sur sa situation.</option>
-                          </select>
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                {activeTab === 'observation' && renderObservationPanel()}
+                {activeTab === 'analysis' && renderAnalysisPanel()}
+                {activeTab === 'interventions' && renderInterventionPanel()}
+                {activeTab === 'history' && renderHistoryPanel()}
               </main>
+
+              <footer className="bg-gray-100 border-t border-gray-300 mt-12 p-6 text-xs text-gray-600 text-center">
+                <p>© 2025-2026 MARET Davie — PraxisPro Épistémé v2.0</p>
+                <p className="mt-2">Cadres théoriques: Watzlawick • Piaget • Dubar • Paul • Libois • Minuchin • Beck • Bourdieu</p>
+              </footer>
             </div>
           );
         };
@@ -219,18 +667,5 @@
         const root = ReactDOM.createRoot(document.getElementById('root'));
         root.render(<App />);
    </script>
-<div class="toast-container" id="toast-container"></div>
-<!-- Legal notice and copyright -->
-<div class="footer-legal" style="margin-top:40px;padding:20px;background:#f9f9f9;border-top:1px solid #ddd;font-size:10px;color:#666;line-height:1.6;text-align:center;">
-  <strong style="color:#333;">© 2025–2026 MARET Davie — Tous droits réservés</strong><br>
-  <br>
-  <strong style="color:#555;">Conditions d'utilisation du code :</strong><br>
-  • Le code source de ces projets est fourni à titre informatif et éducatif<br>
-  • Toute reproduction, modification ou redistribution du code sans autorisation écrite est strictement interdite<br>
-  • Les designs, interfaces visuelles et contenus créatifs sont protégés par le droit d'auteur<br>
-  • Pour toute demande de réutilisation ou de collaboration, contactez l'auteur<br>
-  <br>
-  <strong style="color:#555;">Attribution :</strong> Si vous utilisez ou vous inspirez de ces projets, veuillez citer la source : dmaret © 2025–2026
-</div>
 </body>
 </html>
