@@ -857,7 +857,15 @@
                   ))}
                 </div>
 
-                {activeTab === 'observation' && renderObservationPanel()}
+                {activeTab === 'observation' && (
+                  <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                    <div>{renderObservationPanel()}</div>
+                    <div className="xl:sticky xl:top-28 xl:self-start xl:max-h-[calc(100vh-8rem)] xl:overflow-y-auto">
+                      <h2 className="text-lg font-bold mb-4 text-slate-800">🔬 Analyse en direct</h2>
+                      {renderAnalysisPanel()}
+                    </div>
+                  </div>
+                )}
                 {activeTab === 'analysis' && renderAnalysisPanel()}
                 {activeTab === 'interventions' && renderInterventionPanel()}
                 {activeTab === 'history' && renderHistoryPanel()}
