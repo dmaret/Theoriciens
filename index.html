@@ -790,6 +790,53 @@
                 </div>
               </header>
 
+              <section className="bg-white border-b border-gray-200">
+                <div className="max-w-7xl mx-auto px-4 py-6">
+                  <details className="group" open>
+                    <summary className="flex items-center justify-between cursor-pointer list-none">
+                      <h2 className="text-lg font-bold text-slate-800">📖 À propos de PraxisPro Épistémé</h2>
+                      <span className="text-xs text-gray-500 group-open:hidden">Afficher ▾</span>
+                      <span className="text-xs text-gray-500 hidden group-open:inline">Masquer ▴</span>
+                    </summary>
+                    <div className="mt-4 text-sm text-gray-700 space-y-4">
+                      <p>
+                        <strong>PraxisPro Épistémé</strong> est un outil d'aide à l'analyse clinique destiné aux professionnels de l'accompagnement
+                        (travailleurs sociaux, formateurs, conseillers, cliniciens). À partir d'observations symptomatiques,
+                        l'application génère des hypothèses théoriques croisées et propose des pistes d'intervention contextualisées.
+                      </p>
+                      <div className="grid md:grid-cols-2 gap-4">
+                        <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
+                          <h3 className="font-semibold text-slate-800 mb-2">✨ Fonctionnalités</h3>
+                          <ul className="list-disc list-inside space-y-1 text-xs">
+                            <li>19 observations cliniques en 5 catégories</li>
+                            <li>Hypothèses multithéoriques croisées</li>
+                            <li>Questions cliniques contextualisées</li>
+                            <li>Notes cliniques libres</li>
+                            <li>Historique des analyses (localStorage)</li>
+                            <li>Export de rapport téléchargeable</li>
+                          </ul>
+                        </div>
+                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                          <h3 className="font-semibold text-slate-800 mb-2">🧠 Cadres théoriques</h3>
+                          <ul className="list-disc list-inside space-y-1 text-xs">
+                            <li><strong>Systémique</strong> — Watzlawick, Minuchin, Satir</li>
+                            <li><strong>Constructivisme</strong> — Piaget, Dubar, Carré, Mezirow</li>
+                            <li><strong>Psychodynamique</strong> — Freud, Winnicott, Balint, Reich</li>
+                            <li><strong>Sociologique</strong> — Bourdieu, Goffman, Lahire, Dubet</li>
+                            <li><strong>Cognitive-Comportementale</strong> — Beck, Bandura, Ellis</li>
+                          </ul>
+                        </div>
+                      </div>
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
+                        ⚠️ <strong>Avertissement :</strong> cet outil est une aide à la réflexion clinique.
+                        Il ne se substitue pas au jugement professionnel, au diagnostic médical ou à la supervision clinique.
+                        Les hypothèses générées doivent être considérées comme des pistes d'exploration.
+                      </div>
+                    </div>
+                  </details>
+                </div>
+              </section>
+
               <main className="max-w-7xl mx-auto px-4 py-8">
                 <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-300 pb-4">
                   {['observation', 'analysis', 'interventions', 'history'].map(tab => (
