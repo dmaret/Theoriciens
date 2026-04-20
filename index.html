@@ -472,6 +472,7 @@
             return saved ? JSON.parse(saved) : [];
           });
           const [showAdvancedMode, setShowAdvancedMode] = useState(false);
+          const [showAbout, setShowAbout] = useState(false);
           const [clinicalNotes, setClinicalNotes] = useState('');
 
           // Sauvegarder l\'historique
@@ -602,6 +603,13 @@
 
               {/* Actions */}
               <div className="flex gap-3 flex-wrap">
+                <button
+                  onClick={() => setActiveTab('analysis')}
+                  disabled={selectedSymptoms.length === 0}
+                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 disabled:bg-gray-300 disabled:cursor-not-allowed font-semibold text-sm"
+                >
+                  🔬 Analyser
+                </button>
                 <button
                   onClick={saveAnalysis}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold text-sm"
@@ -782,31 +790,31 @@
                       <h1 className="text-3xl font-black tracking-tight">Praxis<span className="text-blue-300">Pro</span> Épistémé</h1>
                       <p className="text-xs text-gray-300 font-medium mt-1">🧬 Ingénierie Clinique Avancée • Analyse Multithéorique</p>
                     </div>
-                    <div className="text-xs text-gray-300 text-right">
-                      <p>v2.0 — Multi-profil</p>
-                      <p className="text-blue-300">{selectedSymptoms.length} observation(s)</p>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setShowAbout(!showAbout)}
+                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold rounded-lg border border-blue-400 transition"
+                      >
+                        📖 {showAbout ? 'Masquer' : 'À propos'}
+                      </button>
+                      <div className="text-xs text-gray-300 text-right">
+                        <p>v2.0 — Multi-profil</p>
+                        <p className="text-blue-300">{selectedSymptoms.length} observation(s)</p>
+                      </div>
                     </div>
                   </div>
                 </div>
-              </header>
-
-              <section className="bg-white border-b border-gray-200">
-                <div className="max-w-7xl mx-auto px-4 py-6">
-                  <details className="group" open>
-                    <summary className="flex items-center justify-between cursor-pointer list-none">
-                      <h2 className="text-lg font-bold text-slate-800">📖 À propos de PraxisPro Épistémé</h2>
-                      <span className="text-xs text-gray-500 group-open:hidden">Afficher ▾</span>
-                      <span className="text-xs text-gray-500 hidden group-open:inline">Masquer ▴</span>
-                    </summary>
-                    <div className="mt-4 text-sm text-gray-700 space-y-4">
+                {showAbout && (
+                  <div className="bg-slate-800/95 border-t border-blue-700 text-gray-100">
+                    <div className="max-w-7xl mx-auto px-4 py-5 text-sm space-y-4">
                       <p>
                         <strong>PraxisPro Épistémé</strong> est un outil d'aide à l'analyse clinique destiné aux professionnels de l'accompagnement
                         (travailleurs sociaux, formateurs, conseillers, cliniciens). À partir d'observations symptomatiques,
                         l'application génère des hypothèses théoriques croisées et propose des pistes d'intervention contextualisées.
                       </p>
                       <div className="grid md:grid-cols-2 gap-4">
-                        <div className="bg-slate-50 rounded-lg p-4 border border-slate-200">
-                          <h3 className="font-semibold text-slate-800 mb-2">✨ Fonctionnalités</h3>
+                        <div className="bg-slate-900/60 rounded-lg p-4 border border-slate-700">
+                          <h3 className="font-semibold text-blue-300 mb-2">✨ Fonctionnalités</h3>
                           <ul className="list-disc list-inside space-y-1 text-xs">
                             <li>19 observations cliniques en 5 catégories</li>
                             <li>Hypothèses multithéoriques croisées</li>
@@ -816,8 +824,8 @@
                             <li>Export de rapport téléchargeable</li>
                           </ul>
                         </div>
-                        <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
-                          <h3 className="font-semibold text-slate-800 mb-2">🧠 Cadres théoriques</h3>
+                        <div className="bg-slate-900/60 rounded-lg p-4 border border-slate-700">
+                          <h3 className="font-semibold text-blue-300 mb-2">🧠 Cadres théoriques</h3>
                           <ul className="list-disc list-inside space-y-1 text-xs">
                             <li><strong>Systémique</strong> — Watzlawick, Minuchin, Satir</li>
                             <li><strong>Constructivisme</strong> — Piaget, Dubar, Carré, Mezirow</li>
@@ -827,15 +835,15 @@
                           </ul>
                         </div>
                       </div>
-                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-xs text-amber-900">
+                      <div className="bg-amber-900/40 border border-amber-600 rounded-lg p-3 text-xs text-amber-100">
                         ⚠️ <strong>Avertissement :</strong> cet outil est une aide à la réflexion clinique.
                         Il ne se substitue pas au jugement professionnel, au diagnostic médical ou à la supervision clinique.
                         Les hypothèses générées doivent être considérées comme des pistes d'exploration.
                       </div>
                     </div>
-                  </details>
-                </div>
-              </section>
+                  </div>
+                )}
+              </header>
 
               <main className="max-w-7xl mx-auto px-4 py-8">
                 <div className="flex flex-wrap gap-2 mb-8 border-b border-gray-300 pb-4">
