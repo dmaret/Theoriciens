@@ -244,6 +244,44 @@
           }
         };
 
+        // ============ LEXIQUE D'ANALYSE DES NOTES CLINIQUES ============
+        const NOTES_LEXICON = {
+          frameworks: {
+            systemic: ['homéostasie', 'feedback', 'double-bind', 'double contrainte', 'jeu relationnel', 'système', 'famille', 'symétrie', 'complémentarité', 'circulaire', 'interaction'],
+            constructivist: ['accommodation', 'assimilation', 'schème', 'schéma', 'identité', 'identitaire', 'apprenance', 'apprentissage', 'crise', 'transformation', 'sens'],
+            psychodynamic: ['transfert', 'contre-transfert', 'inconscient', 'résistance', 'défense', 'pulsion', 'culpabilité', 'loyauté', 'angoisse', 'refoulé', 'transitionnel'],
+            sociological: ['habitus', 'capital', 'stigmate', 'rôle', 'classe', 'milieu', 'norme', 'stigmatisation', 'honte sociale', 'institution', 'culture'],
+            cognitive: ['cognition', 'croyance', 'pensée', 'schéma', 'renforcement', 'auto-efficacité', 'estime', 'confiance', 'rumination', 'évitement', 'exposition']
+          },
+          profiles: {
+            evasion: ['silence', 'mutisme', 'retrait', 'évite', 'fuit', 'n\'ose pas', 'ne parle pas', 'inhibition'],
+            resistance: ['refuse', 'refus', 'oppose', 'critique', 'conteste', 'provoque', 'défi', 'rejette'],
+            sabotage: ['échec', 'rate', 'rater', 'abandonne', 'abandon', 'dernière minute', 'dernier moment', 'retard', 'oubli'],
+            paradox: ['dit oui', 'promesse', 'contradictoire', 'contradiction', 'sur-adaptation', 'oui mais', 'incohérent'],
+            emotional: ['pleure', 'pleurs', 'colère', 'anxiété', 'angoisse', 'peur', 'honte', 'culpabilité', 'tristesse', 'apathie'],
+            absence: ['absent', 'absence', 'ne vient pas', 'manque', 'rendez-vous manqué', 'n\'est pas venu', 'désinvestissement']
+          }
+        };
+
+        const analyzeNotes = (notes) => {
+          if (!notes || !notes.trim()) return null;
+          const text = notes.toLowerCase();
+          const matched = { frameworks: [], profiles: [] };
+          Object.entries(NOTES_LEXICON.frameworks).forEach(([key, kws]) => {
+            const hits = kws.filter(kw => text.includes(kw.toLowerCase()));
+            if (hits.length) matched.frameworks.push({ key, name: THEORETICAL_FRAMEWORK[key].name, hits });
+          });
+          const profileNames = {
+            evasion: '🔇 Évitement', resistance: '⚡ Résistance', sabotage: '💣 Sabotage',
+            paradox: '🎭 Paradoxe', emotional: '🌊 Émotionnel', absence: '👻 Absence'
+          };
+          Object.entries(NOTES_LEXICON.profiles).forEach(([key, kws]) => {
+            const hits = kws.filter(kw => text.includes(kw.toLowerCase()));
+            if (hits.length) matched.profiles.push({ key, name: profileNames[key], hits });
+          });
+          return matched;
+        };
+
         // ============ HYPOTHÈSES PAR COMBINAISON DE SYMPTÔMES ============
         const generateHypotheses = (selectedSymptoms) => {
           const symptomIds = new Set(selectedSymptoms);
@@ -643,6 +681,15 @@
 
             const hypotheses = generateHypotheses(selectedSymptoms);
             const selectedSymptomLabels = SYMPTOMS_DATABASE.filter(s => selectedSymptoms.includes(s.id));
+            const notesMatches = analyzeNotes(clinicalNotes);
+            const selectedFrameKeys = new Set(hypotheses.flatMap(h => (h.mainAxe || '').toLowerCase().split('/').map(s => s.trim()).map(s => {
+              if (s.startsWith('systém')) return 'systemic';
+              if (s.startsWith('constructi')) return 'constructivist';
+              if (s.startsWith('psychodyn')) return 'psychodynamic';
+              if (s.startsWith('sociolog')) return 'sociological';
+              if (s.startsWith('cognitiv')) return 'cognitive';
+              return null;
+            }).filter(Boolean)));
 
             return (
               <div className="space-y-6">
@@ -664,6 +711,61 @@
                     </div>
                   </div>
                 </div>
+
+                {/* Corrélation notes cliniques ↔ analyse */}
+                {notesMatches && (notesMatches.frameworks.length > 0 || notesMatches.profiles.length > 0) && (
+                  <div className="bg-purple-50 border border-purple-200 p-6 rounded-xl">
+                    <h3 className="font-bold text-purple-900 mb-3">📝 Corrélation Notes ↔ Analyse</h3>
+                    <p className="text-xs text-purple-700 mb-4">Termes détectés dans vos notes cliniques, rapprochés des cadres théoriques et des profils comportementaux.</p>
+
+                    {notesMatches.frameworks.length > 0 && (
+                      <div className="mb-4">
+                        <p className="text-xs font-bold text-purple-800 uppercase mb-2">🧠 Cadres théoriques évoqués</p>
+                        <div className="space-y-2">
+                          {notesMatches.frameworks.map(fw => {
+                            const reinforced = selectedFrameKeys.has(fw.key);
+                            return (
+                              <div key={fw.key} className={`text-sm p-2 rounded border ${reinforced ? 'bg-green-50 border-green-300' : 'bg-amber-50 border-amber-300'}`}>
+                                <p className="font-semibold text-gray-800">
+                                  {reinforced ? '✅ ' : '⚠️ '}{fw.name}
+                                  {reinforced
+                                    ? <span className="text-xs text-green-700 font-normal"> — cohérent avec les hypothèses générées</span>
+                                    : <span className="text-xs text-amber-700 font-normal"> — évoqué dans les notes mais absent des hypothèses</span>}
+                                </p>
+                                <p className="text-xs text-gray-600 mt-1">Termes détectés : {fw.hits.join(', ')}</p>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+
+                    {notesMatches.profiles.length > 0 && (
+                      <div>
+                        <p className="text-xs font-bold text-purple-800 uppercase mb-2">🎯 Profils comportementaux évoqués</p>
+                        <div className="flex flex-wrap gap-2">
+                          {notesMatches.profiles.map(pr => (
+                            <span key={pr.key} className="text-xs bg-white border border-purple-300 text-purple-900 px-2 py-1 rounded-full">
+                              {pr.name} <span className="text-gray-500">({pr.hits.length})</span>
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="mt-4 bg-amber-50 border border-amber-300 rounded p-3 text-xs text-amber-900">
+                      ⚠️ <strong>Limite :</strong> ce rapprochement repose sur une <strong>détection par mots-clés</strong>, sans compréhension du sens, des négations ni du contexte.
+                      Une mention de « pas de transfert » sera par exemple comptée comme évoquant le cadre psychodynamique.
+                      Ces correspondances sont des <strong>pistes de relecture</strong>, pas des conclusions cliniques — votre jugement professionnel reste déterminant.
+                    </div>
+                  </div>
+                )}
+
+                {clinicalNotes && clinicalNotes.trim() && notesMatches && notesMatches.frameworks.length === 0 && notesMatches.profiles.length === 0 && (
+                  <div className="bg-gray-50 border border-gray-200 p-4 rounded-xl text-xs text-gray-600">
+                    ℹ️ Aucun terme de référence détecté dans vos notes. L'outil cherche un lexique limité (mots-clés théoriques et comportementaux) — l'absence de détection ne signifie pas que vos notes sont hors cadre.
+                  </div>
+                )}
 
                 {/* Hypothèses */}
                 {hypotheses.map((hyp, idx) => (
